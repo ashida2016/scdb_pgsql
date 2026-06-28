@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools >= 75.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scdb_pgsql"
+version = "0.1.0"
+description = "高性能、工业级的 PostgreSQL 数据库操作 Python 包"
+readme = "README.md"
+license = "MIT"
+requires-python = ">= 3.10"
+authors = [
+    { name = "scdb", email = "scdb@example.com" },
+]
+keywords = ["postgresql", "database", "connection-pool", "psycopg2"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "psycopg2-binary >= 2.9",
+    "pandas >= 2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest >= 8.0",
+    "pytest-cov >= 6.0",
+    "pytest-mock >= 3.14",
+]
+
+[project.urls]
+Repository = "https://github.com/scdb/scdb_pgsql"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "integration: 集成测试 — 需要真实 PostgreSQL 数据库 (pgpool.lan)",
+]
+
+[tool.coverage.run]
+source = ["scdb_pgsql"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
+]
