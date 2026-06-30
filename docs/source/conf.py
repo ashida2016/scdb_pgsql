@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath('../../src'))
 project = 'scdb_pgsql'
 copyright = '2026, Ashida.Shi'
 author = 'Ashida.Shi'
-release = '0.2.0'
+release = '0.2.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -25,6 +25,7 @@ extensions = [
     'sphinx.ext.viewcode',  # 可以在文档中直接查看源码链接
     'sphinx.ext.napoleon',  # 支持更美观的 docstring 风格
     'sphinx.ext.githubpages',  # 必须添加，用于兼容 GitHub Pages
+    'sphinx_copybutton',  # 代码块一键复制按钮
 ]
 
 
