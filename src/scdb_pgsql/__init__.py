@@ -12,7 +12,7 @@ Example:
     ...     rows = db.fetch_all("SELECT * FROM users")
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from scdb_pgsql.core import SCDBPgSQL
 from scdb_pgsql.exceptions import (

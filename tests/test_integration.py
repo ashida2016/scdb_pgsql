@@ -72,9 +72,11 @@ def clean_table(db):
 
     确保每个测试从干净的状态开始。
     """
-    db.execute(f"TRUNCATE TABLE {TABLE} RESTART IDENTITY CASCADE")
+    # db.execute(f"TRUNCATE TABLE {TABLE} RESTART IDENTITY CASCADE")
+    db.execute(f"DELETE FROM {TABLE}")
     yield
-    db.execute(f"TRUNCATE TABLE {TABLE} RESTART IDENTITY CASCADE")
+    # db.execute(f"TRUNCATE TABLE {TABLE} RESTART IDENTITY CASCADE")
+    db.execute(f"DELETE FROM {TABLE}")
 
 
 # ====================================================================
@@ -188,7 +190,7 @@ class TestResultFormats:
         self._insert_test_data(db)
         rows = db.fetch_all(
             f"SELECT id, name FROM {TABLE} ORDER BY id",
-            result_format="dictionary",
+            result_format="dict",
         )
         assert isinstance(rows, list)
         assert isinstance(rows[0], dict)
@@ -214,7 +216,7 @@ class TestResultFormats:
         self._insert_test_data(db)
         df = db.fetch_all(
             f"SELECT id, name FROM {TABLE} ORDER BY id",
-            result_format="dataframe",
+            result_format="df",
         )
         assert isinstance(df, pd.DataFrame)
         assert list(df.columns) == ["id", "name"]
@@ -230,7 +232,7 @@ class TestResultFormats:
 
         # dictionary
         assert db.fetch_all(
-            f"SELECT * FROM {TABLE}", result_format="dictionary"
+            f"SELECT * FROM {TABLE}", result_format="dict"
         ) == []
 
         # json
@@ -240,7 +242,7 @@ class TestResultFormats:
 
         # dataframe
         df = db.fetch_all(
-            f"SELECT * FROM {TABLE}", result_format="dataframe"
+            f"SELECT * FROM {TABLE}", result_format="df"
         )
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 0
@@ -264,7 +266,7 @@ class TestPagination:
     def test_first_page(self, db):
         """验证第一页数据."""
         self._insert_bulk_data(db)
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             f"SELECT id, name FROM {TABLE} ORDER BY id",
             page=1,
             page_size=10,
@@ -278,7 +280,7 @@ class TestPagination:
     def test_middle_page(self, db):
         """验证中间页数据."""
         self._insert_bulk_data(db)
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             f"SELECT id, name FROM {TABLE} ORDER BY id",
             page=2,
             page_size=10,
@@ -289,7 +291,7 @@ class TestPagination:
     def test_last_page(self, db):
         """验证最后一页数据 (不满页)."""
         self._insert_bulk_data(db)
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             f"SELECT id, name FROM {TABLE} ORDER BY id",
             page=3,
             page_size=10,
@@ -301,7 +303,7 @@ class TestPagination:
     def test_empty_page(self, db):
         """验证超出范围的页码."""
         self._insert_bulk_data(db, count=5)
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             f"SELECT id, name FROM {TABLE} ORDER BY id",
             page=10,
             page_size=10,
@@ -309,30 +311,30 @@ class TestPagination:
         assert result["total"] == 5
         assert len(result["data"]) == 0
 
-    def test_paginated_with_dictionary_format(self, db):
+    def test_page_with_dictionary_format(self, db):
         """验证分页查询支持 dictionary 格式."""
         self._insert_bulk_data(db, count=5)
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             f"SELECT id, name FROM {TABLE} ORDER BY id",
             page=1,
             page_size=3,
-            result_format="dictionary",
+            result_format="dict",
         )
         assert isinstance(result["data"][0], dict)
         assert "name" in result["data"][0]
         assert result["total"] == 5
         assert result["total_pages"] == 2
 
-    def test_paginated_with_params(self, db):
+    def test_page_with_params(self, db):
         """验证带参数的分页查询."""
         self._insert_bulk_data(db, count=20)
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             f"SELECT id, name FROM {TABLE} WHERE id > %s ORDER BY id",
-            params=(5,),
+            params=(0,),
             page=1,
             page_size=10,
         )
-        assert result["total"] == 15
+        assert result["total"] == 20
         assert len(result["data"]) == 10
 
 

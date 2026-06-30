@@ -7,7 +7,7 @@
 ## 特性
 
 - **连接池化** — 基于 `ThreadedConnectionPool` 的线程安全连接池
-- **多格式输出** — 查询结果支持 `tuple`、`dictionary`、`json`、`dataframe` 四种格式
+- **多格式输出** — 查询结果支持 `tuple`、`dict`、`json`、`df` 四种格式
 - **分页查询** — 使用窗口函数 `COUNT(*) OVER()` 实现高效单次查询分页
 - **批量操作** — 基于 `execute_batch` 和 `execute_values` 的高性能批量写入
 - **事务管理** — 上下文管理器风格的事务支持，自动提交/回滚
@@ -56,7 +56,7 @@ with SCDBPgSQL(meta) as db:
     # 返回字典列表
     dicts = db.fetch_all(
         "SELECT id, name FROM users",
-        result_format="dictionary"
+        result_format="dict"
     )
     # [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
 
@@ -69,7 +69,7 @@ with SCDBPgSQL(meta) as db:
     # 返回 pandas DataFrame
     df = db.fetch_all(
         "SELECT id, name, age FROM users",
-        result_format="dataframe"
+        result_format="df"
     )
 ```
 
@@ -77,11 +77,11 @@ with SCDBPgSQL(meta) as db:
 
 ```python
 with SCDBPgSQL(meta) as db:
-    result = db.fetch_paginated(
+    result = db.fetch_page(
         "SELECT id, name FROM users",
         page=2,
         page_size=20,
-        result_format="dictionary",
+        result_format="dict",
     )
     print(result["data"])         # 当前页数据
     print(result["page"])         # 2
@@ -168,7 +168,7 @@ with SCDBPgSQL(meta) as db:
 |------|------|
 | `test_connection()` | 测试数据库连接，返回 `bool` |
 | `fetch_all(sql, params, result_format)` | 一次性查询全部结果 |
-| `fetch_paginated(sql, params, page, page_size, result_format)` | 分页查询 |
+| `fetch_page(sql, params, page, page_size, result_format)` | 分页查询 |
 | `execute(sql, params)` | 执行单条 SQL，返回受影响行数 |
 | `execute_many(sql, params_list, page_size)` | 批量执行 (`execute_batch`) |
 | `execute_values(sql, values_list, template, page_size)` | 高性能批量插入 |
@@ -180,9 +180,9 @@ with SCDBPgSQL(meta) as db:
 | 格式 | 返回类型 | 说明 |
 |------|----------|------|
 | `"tuple"` | `list[tuple]` | 默认格式 |
-| `"dictionary"` | `list[dict]` | 字典列表 |
+| `"dict"` | `list[dict]` | 字典列表 |
 | `"json"` | `str` | JSON 字符串 |
-| `"dataframe"` | `pandas.DataFrame` | DataFrame (需安装 pandas) |
+| `"df"` | `pandas.DataFrame` | DataFrame (需安装 pandas) |
 
 ## 运行测试
 

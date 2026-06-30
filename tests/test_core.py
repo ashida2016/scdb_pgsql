@@ -315,7 +315,7 @@ class TestFetchAll:
         self._setup_cursor(mock_pool, rows, desc)
 
         result = db.fetch_all(
-            "SELECT * FROM users", result_format="dictionary"
+            "SELECT * FROM users", result_format="dict"
         )
         assert result == [
             {"id": 1, "name": "Alice"},
@@ -341,7 +341,7 @@ class TestFetchAll:
         self._setup_cursor(mock_pool, rows, desc)
 
         result = db.fetch_all(
-            "SELECT * FROM users", result_format="dataframe"
+            "SELECT * FROM users", result_format="df"
         )
         import pandas as pd
 
@@ -406,12 +406,12 @@ class TestFetchAll:
 
 
 # ====================================================================
-# fetch_paginated 测试
+# fetch_page 测试
 # ====================================================================
 
 
 class TestFetchPaginated:
-    """fetch_paginated 分页查询测试."""
+    """fetch_page 分页查询测试."""
 
     def _setup_paginated_cursor(self, mock_pool, rows, description):
         """辅助方法：设置分页查询的 mock cursor."""
@@ -433,7 +433,7 @@ class TestFetchPaginated:
         desc = [("id",), ("name",), ("_scdb_total",)]
         self._setup_paginated_cursor(mock_pool, rows, desc)
 
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             "SELECT id, name FROM users", page=1, page_size=2
         )
         assert result["page"] == 1
@@ -448,7 +448,7 @@ class TestFetchPaginated:
         desc = [("id",), ("name",), ("_scdb_total",)]
         self._setup_paginated_cursor(mock_pool, rows, desc)
 
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             "SELECT id, name FROM users", page=2, page_size=2
         )
         assert result["page"] == 2
@@ -471,7 +471,7 @@ class TestFetchPaginated:
         mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
         mock_pool.getconn.return_value = mock_conn
 
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             "SELECT id, name FROM users", page=10, page_size=2
         )
         assert result["total"] == 5
@@ -484,23 +484,23 @@ class TestFetchPaginated:
         desc = [("id",), ("name",), ("_scdb_total",)]
         self._setup_paginated_cursor(mock_pool, rows, desc)
 
-        result = db.fetch_paginated(
+        result = db.fetch_page(
             "SELECT id, name FROM users",
             page=1,
             page_size=10,
-            result_format="dictionary",
+            result_format="dict",
         )
         assert result["data"] == [{"id": 1, "name": "Alice"}]
 
     def test_paginated_invalid_page(self, db):
         """验证 page < 1 时抛出 ValueError."""
         with pytest.raises(ValueError, match="page 必须 >= 1"):
-            db.fetch_paginated("SELECT 1", page=0)
+            db.fetch_page("SELECT 1", page=0)
 
     def test_paginated_invalid_page_size(self, db):
         """验证 page_size < 1 时抛出 ValueError."""
         with pytest.raises(ValueError, match="page_size 必须 >= 1"):
-            db.fetch_paginated("SELECT 1", page_size=0)
+            db.fetch_page("SELECT 1", page_size=0)
 
     def test_paginated_sql_contains_cte(self, db, mock_pool):
         """验证分页 SQL 使用 CTE 包装."""
@@ -510,7 +510,7 @@ class TestFetchPaginated:
             mock_pool, rows, desc
         )
 
-        db.fetch_paginated("SELECT id FROM t", page=1, page_size=10)
+        db.fetch_page("SELECT id FROM t", page=1, page_size=10)
         executed_sql = mock_cursor.execute.call_args[0][0]
         assert "WITH _scdb_base AS" in executed_sql
         assert "COUNT(*) OVER()" in executed_sql
@@ -899,7 +899,7 @@ class TestFormatResults:
         """验证 dictionary 格式转换."""
         rows = [(1, "a")]
         desc = [("id",), ("name",)]
-        result = SCDBPgSQL._format_results(rows, desc, "dictionary")
+        result = SCDBPgSQL._format_results(rows, desc, "dict")
         assert result == [{"id": 1, "name": "a"}]
 
     def test_format_json(self):
@@ -916,7 +916,7 @@ class TestFormatResults:
 
         rows = [(1, "a"), (2, "b")]
         desc = [("id",), ("name",)]
-        result = SCDBPgSQL._format_results(rows, desc, "dataframe")
+        result = SCDBPgSQL._format_results(rows, desc, "df")
         assert isinstance(result, pd.DataFrame)
         assert list(result.columns) == ["id", "name"]
 
@@ -928,5 +928,5 @@ class TestFormatResults:
     def test_format_empty_rows(self):
         """验证空行集的格式转换."""
         desc = [("id",), ("name",)]
-        result = SCDBPgSQL._format_results([], desc, "dictionary")
+        result = SCDBPgSQL._format_results([], desc, "dict")
         assert result == []

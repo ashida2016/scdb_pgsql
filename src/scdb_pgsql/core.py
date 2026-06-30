@@ -33,7 +33,7 @@ from scdb_pgsql.meta import SCDBPgSQLMeta
 logger = logging.getLogger(__name__)
 
 # 结果格式类型别名
-ResultFormat = Literal["tuple", "dataframe", "json", "dictionary"]
+ResultFormat = Literal["tuple", "df", "json", "dict"]
 
 # execute_batch 默认批次大小
 _DEFAULT_PAGE_SIZE = 1000
@@ -306,9 +306,9 @@ class SCDBPgSQL:
         Returns:
             根据 result_format 返回:
             - ``"tuple"``: ``list[tuple]``
-            - ``"dictionary"``: ``list[dict]``
+            - ``"dict"``: ``list[dict]``
             - ``"json"``: JSON 字符串
-            - ``"dataframe"``: ``pandas.DataFrame``
+            - ``"df"``: ``pandas.DataFrame``
 
         Raises:
             SCDBQueryError: 格式转换失败时.
@@ -318,7 +318,7 @@ class SCDBPgSQL:
 
         columns = [desc[0] for desc in description] if description else []
 
-        if result_format == "dictionary":
+        if result_format == "dict":
             return [dict(zip(columns, row)) for row in rows]
 
         if result_format == "json":
@@ -330,14 +330,14 @@ class SCDBPgSQL:
                     f"JSON 序列化失败: {exc}"
                 ) from exc
 
-        if result_format == "dataframe":
+        if result_format == "df":
             try:
                 import pandas as pd  # noqa: PLC0415
 
                 return pd.DataFrame(rows, columns=columns)
             except ImportError as exc:
                 raise SCDBQueryError(
-                    "使用 dataframe 格式需要安装 pandas: "
+                    "使用 df 格式需要安装 pandas: "
                     "pip install pandas"
                 ) from exc
 
@@ -355,7 +355,7 @@ class SCDBPgSQL:
             sql: SELECT 查询语句.
             params: SQL 参数.
             result_format: 结果格式，支持 ``"tuple"`` (默认)、
-                ``"dataframe"``、``"json"``、``"dictionary"``.
+                ``"df"``、``"json"``、``"dict"``.
 
         Returns:
             查询结果，格式由 result_format 决定.
@@ -379,7 +379,7 @@ class SCDBPgSQL:
                 conn.rollback()
                 self._put_conn(conn)
 
-    def fetch_paginated(
+    def fetch_page(
         self,
         sql: str,
         params: tuple | dict | None = None,

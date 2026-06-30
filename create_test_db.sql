@@ -1,7 +1,8 @@
 -- ==========================================================================
 -- scdb_pgsql 测试数据库初始化脚本
 -- Sample1: psql -h pgpool.lan -U postgres -f create_test_db.sql
--- Sample2: PGPASSWORD='你的密码' psql -h pgpool.lan -U postgres -f create_test_db.sql
+-- Sample2: PGPASSWORD='管理员postgres的密码' psql -h pgpool.lan -U postgres -d postgres -f create_test_db.sql
+-- Sample2: PGPASSWORD=$PGPOOL_PASWD psql -h pgpool.lan -U $PGPOOL_ADMIN -d $PGPOOL_DEFDB -f create_test_db.sql
 
 -- Note:
 -- To use "psql" tool , need install pgsql client tools first as follow

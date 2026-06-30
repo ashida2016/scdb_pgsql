@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scdb_pgsql"
-version = "0.1.0"
+version = "0.2.0"
 description = "高性能、工业级的 PostgreSQL 数据库操作 Python 包"
 readme = "README.md"
 license = "MIT"
-requires-python = ">= 3.10"
+requires-python = ">= 3.12"
 authors = [
     { name = "scdb", email = "scdb@example.com" },
 ]
