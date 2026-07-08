@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import math
+import xml.etree.ElementTree as ET
 from unittest.mock import MagicMock, patch, call
 
 import pytest
@@ -386,6 +387,53 @@ class TestFetchAll:
         with pytest.raises(SCDBQueryError, match="查询执行失败"):
             db.fetch_all("INVALID SQL")
 
+    def test_fetch_all_xml_format(self, db, mock_pool):
+        """验证 xml 格式返回结果."""
+        rows = [(1, "Alice"), (2, "Bob")]
+        desc = [("id",), ("name",)]
+        self._setup_cursor(mock_pool, rows, desc)
+
+        result = db.fetch_all(
+            "SELECT * FROM users", result_format="xml"
+        )
+        root = ET.fromstring(result)
+        assert root.tag == "results"
+        row_elems = root.findall("row")
+        assert len(row_elems) == 2
+        assert row_elems[0].find("id").text == "1"
+        assert row_elems[0].find("name").text == "Alice"
+
+    def test_fetch_all_yaml_format(self, db, mock_pool):
+        """验证 yaml 格式返回结果."""
+        import yaml
+
+        rows = [(1, "Alice"), (2, "Bob")]
+        desc = [("id",), ("name",)]
+        self._setup_cursor(mock_pool, rows, desc)
+
+        result = db.fetch_all(
+            "SELECT * FROM users", result_format="yaml"
+        )
+        parsed = yaml.safe_load(result)
+        assert parsed == [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"},
+        ]
+
+    def test_fetch_all_csv_format(self, db, mock_pool):
+        """验证 csv 格式返回结果."""
+        rows = [(1, "Alice"), (2, "Bob")]
+        desc = [("id",), ("name",)]
+        self._setup_cursor(mock_pool, rows, desc)
+
+        result = db.fetch_all(
+            "SELECT * FROM users", result_format="csv"
+        )
+        lines = result.strip().splitlines()
+        assert lines[0] == "id,name"
+        assert lines[1] == "1,Alice"
+        assert lines[2] == "2,Bob"
+
     def test_fetch_all_invalid_format(self, db, mock_pool):
         """验证不支持的格式抛出 SCDBQueryError."""
         rows = [(1,)]
@@ -393,7 +441,7 @@ class TestFetchAll:
         self._setup_cursor(mock_pool, rows, desc)
 
         with pytest.raises(SCDBQueryError, match="不支持的结果格式"):
-            db.fetch_all("SELECT 1", result_format="xml")  # type: ignore[arg-type]
+            db.fetch_all("SELECT 1", result_format="invalid_fmt")  # type: ignore[arg-type]
 
     def test_fetch_all_conn_returned(self, db, mock_pool):
         """验证连接在查询后被归还到连接池."""
@@ -923,7 +971,55 @@ class TestFormatResults:
     def test_format_invalid(self):
         """验证无效格式抛出异常."""
         with pytest.raises(SCDBQueryError, match="不支持的结果格式"):
-            SCDBPgSQL._format_results([], None, "xml")  # type: ignore[arg-type]
+            SCDBPgSQL._format_results([], None, "invalid_fmt")  # type: ignore[arg-type]
+
+    def test_format_xml(self):
+        """验证 xml 格式转换."""
+        rows = [(1, "a"), (2, "b")]
+        desc = [("id",), ("name",)]
+        result = SCDBPgSQL._format_results(rows, desc, "xml")
+        root = ET.fromstring(result)
+        assert root.tag == "results"
+        assert len(root.findall("row")) == 2
+        assert root.find("row/id").text == "1"
+        assert root.find("row/name").text == "a"
+
+    def test_format_xml_none_value(self):
+        """验证 xml 格式处理 None 值."""
+        rows = [(1, None)]
+        desc = [("id",), ("name",)]
+        result = SCDBPgSQL._format_results(rows, desc, "xml")
+        root = ET.fromstring(result)
+        name_text = root.find("row/name").text
+        assert name_text is None or name_text == ""
+
+    def test_format_yaml(self):
+        """验证 yaml 格式转换."""
+        import yaml
+
+        rows = [(1, "a")]
+        desc = [("id",), ("name",)]
+        result = SCDBPgSQL._format_results(rows, desc, "yaml")
+        parsed = yaml.safe_load(result)
+        assert parsed == [{"id": 1, "name": "a"}]
+
+    def test_format_csv(self):
+        """验证 csv 格式转换."""
+        rows = [(1, "a"), (2, "b")]
+        desc = [("id",), ("name",)]
+        result = SCDBPgSQL._format_results(rows, desc, "csv")
+        lines = result.strip().splitlines()
+        assert lines[0] == "id,name"
+        assert lines[1] == "1,a"
+        assert lines[2] == "2,b"
+
+    def test_format_csv_none_value(self):
+        """验证 csv 格式处理 None 值."""
+        rows = [(1, None)]
+        desc = [("id",), ("name",)]
+        result = SCDBPgSQL._format_results(rows, desc, "csv")
+        lines = result.strip().splitlines()
+        assert lines[1] == "1,"
 
     def test_format_empty_rows(self):
         """验证空行集的格式转换."""

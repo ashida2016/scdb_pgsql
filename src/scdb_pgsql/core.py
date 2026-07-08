@@ -13,9 +13,12 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import logging
 import math
+import xml.etree.ElementTree as ET
 from contextlib import contextmanager
 from typing import Any, Generator, Literal, Sequence
 
@@ -33,7 +36,7 @@ from scdb_pgsql.meta import SCDBPgSQLMeta
 logger = logging.getLogger(__name__)
 
 # 结果格式类型别名
-ResultFormat = Literal["tuple", "df", "json", "dict"]
+ResultFormat = Literal["tuple", "df", "json", "dict", "xml", "yaml", "csv"]
 
 # execute_batch 默认批次大小
 _DEFAULT_PAGE_SIZE = 1000
@@ -308,6 +311,9 @@ class SCDBPgSQL:
             - ``"tuple"``: ``list[tuple]``
             - ``"dict"``: ``list[dict]``
             - ``"json"``: JSON 字符串
+            - ``"xml"``: XML 字符串
+            - ``"yaml"``: YAML 字符串
+            - ``"csv"``: CSV 字符串
             - ``"df"``: ``pandas.DataFrame``
 
         Raises:
@@ -328,6 +334,59 @@ class SCDBPgSQL:
             except (TypeError, ValueError) as exc:
                 raise SCDBQueryError(
                     f"JSON 序列化失败: {exc}"
+                ) from exc
+
+        if result_format == "xml":
+            try:
+                root = ET.Element("results")
+                for row in rows:
+                    row_elem = ET.SubElement(root, "row")
+                    for col, val in zip(columns, row):
+                        field = ET.SubElement(row_elem, col)
+                        field.text = str(val) if val is not None else ""
+                return ET.tostring(
+                    root, encoding="unicode", xml_declaration=True
+                )
+            except Exception as exc:
+                raise SCDBQueryError(
+                    f"XML 序列化失败: {exc}"
+                ) from exc
+
+        if result_format == "yaml":
+            try:
+                import yaml  # noqa: PLC0415
+
+                dict_rows = [dict(zip(columns, row)) for row in rows]
+                return yaml.dump(
+                    dict_rows,
+                    allow_unicode=True,
+                    default_flow_style=False,
+                    sort_keys=False,
+                )
+            except ImportError as exc:
+                raise SCDBQueryError(
+                    "使用 yaml 格式需要安装 PyYAML: "
+                    "pip install pyyaml"
+                ) from exc
+            except Exception as exc:
+                raise SCDBQueryError(
+                    f"YAML 序列化失败: {exc}"
+                ) from exc
+
+        if result_format == "csv":
+            try:
+                output = io.StringIO()
+                writer = csv.writer(output)
+                if columns:
+                    writer.writerow(columns)
+                for row in rows:
+                    writer.writerow(
+                        [str(v) if v is not None else "" for v in row]
+                    )
+                return output.getvalue()
+            except Exception as exc:
+                raise SCDBQueryError(
+                    f"CSV 序列化失败: {exc}"
                 ) from exc
 
         if result_format == "df":
@@ -355,7 +414,8 @@ class SCDBPgSQL:
             sql: SELECT 查询语句.
             params: SQL 参数.
             result_format: 结果格式，支持 ``"tuple"`` (默认)、
-                ``"df"``、``"json"``、``"dict"``.
+                ``"dict"``、``"json"``、``"xml"``、``"yaml"``、
+                ``"csv"``、``"df"``.
 
         Returns:
             查询结果，格式由 result_format 决定.

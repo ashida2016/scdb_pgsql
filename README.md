@@ -7,7 +7,7 @@
 ## 特性
 
 - **连接池化** — 基于 `ThreadedConnectionPool` 的线程安全连接池
-- **多格式输出** — 查询结果支持 `tuple`、`dict`、`json`、`df` 四种格式
+- **多格式输出** — 查询结果支持 `tuple`、`dict`、`json`、`xml`、`yaml`、`csv`、`df` 七种格式
 - **分页查询** — 使用窗口函数 `COUNT(*) OVER()` 实现高效单次查询分页
 - **批量操作** — 基于 `execute_batch` 和 `execute_values` 的高性能批量写入
 - **事务管理** — 上下文管理器风格的事务支持，自动提交/回滚
@@ -21,7 +21,12 @@ pip install -e .
 # 安装开发依赖 (pytest, pytest-cov, pytest-mock)
 pip install -e ".[dev]"
 ```
+---  
+## 帮助文档
 
+[ver0.2.1](https://scdb-pgsql.readthedocs.io/zh-cn/ver0.2.1/)  
+
+---  
 ## 快速开始
 
 ### 1. 建立连接
@@ -65,6 +70,32 @@ with SCDBPgSQL(meta) as db:
         "SELECT id, name FROM users",
         result_format="json"
     )
+
+    # 返回 XML 字符串
+    xml_str = db.fetch_all(
+        "SELECT id, name FROM users",
+        result_format="xml"
+    )
+    # <?xml version='1.0' ?><results><row><id>1</id><name>Alice</name></row>...</results>
+
+    # 返回 YAML 字符串 (需安装 PyYAML)
+    yaml_str = db.fetch_all(
+        "SELECT id, name FROM users",
+        result_format="yaml"
+    )
+    # - id: 1
+    #   name: Alice
+    # - id: 2
+    #   name: Bob
+
+    # 返回 CSV 字符串
+    csv_str = db.fetch_all(
+        "SELECT id, name FROM users",
+        result_format="csv"
+    )
+    # id,name
+    # 1,Alice
+    # 2,Bob
 
     # 返回 pandas DataFrame
     df = db.fetch_all(
@@ -182,6 +213,9 @@ with SCDBPgSQL(meta) as db:
 | `"tuple"` | `list[tuple]` | 默认格式 |
 | `"dict"` | `list[dict]` | 字典列表 |
 | `"json"` | `str` | JSON 字符串 |
+| `"xml"` | `str` | XML 字符串 (标准库 `xml.etree`) |
+| `"yaml"` | `str` | YAML 字符串 (需安装 PyYAML) |
+| `"csv"` | `str` | CSV 字符串 (含表头行) |
 | `"df"` | `pandas.DataFrame` | DataFrame (需安装 pandas) |
 
 ## 运行测试
