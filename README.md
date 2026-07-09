@@ -24,6 +24,7 @@ pip install -e ".[dev]"
 ---  
 ## 帮助文档
 
+[ver0.3.0](https://scdb-pgsql.readthedocs.io/zh-cn/ver0.3.0/)  
 [ver0.2.1](https://scdb-pgsql.readthedocs.io/zh-cn/ver0.2.1/)  
 
 ---  
