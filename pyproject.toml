@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scdb_pgsql"
-version = "0.2.1"
+version = "0.3.0"
 description = "高性能、工业级的 PostgreSQL 数据库操作 Python 包"
 readme = "README.md"
 license = "MIT"
